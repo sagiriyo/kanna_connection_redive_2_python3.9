@@ -1,0 +1,7 @@
+.vscode/*
+.vscode
+*.pyc
+rungroup.json
+clanbattlework.json
+data.db
+token.json
