@@ -507,59 +507,29 @@
       var data = await api("/account_info");
       $("#settings-qq").textContent = data.user_id || "--";
 
-      // Account list
-      loadAccountList();
+      // Bound accounts info
+      loadAccountsInfo();
 
-      // Clan list
-      var clanList = $("#settings-clan-list");
-      if (data.clans && data.clans.length) {
-        clanList.innerHTML = data.clans.map(function (c) {
-          return '<div class="settings-clan-item">' +
-            '<div class="settings-clan-item-info">' +
-              '<span class="settings-clan-item-name">' + (c.group_name || "公会") + '</span>' +
-              '<span class="settings-clan-item-id">群号: ' + c.group_id + '</span>' +
-            '</div>' +
-            '<button class="btn btn-sm btn-danger btn-unbind-clan" data-gid="' + c.group_id + '">解绑</button>' +
-          '</div>';
-        }).join("");
-        $$(".btn-unbind-clan", clanList).forEach(function (btn) {
-          btn.addEventListener("click", function () {
-            unbindClan(parseInt(this.dataset.gid));
-          });
-        });
-      } else {
-        clanList.innerHTML = '<div class="empty-state">暂无绑定公会</div>';
-      }
-
-      // Monitor list
+      // Monitor toggle list
       var monitorList = $("#settings-monitor-list");
       if (data.monitors && data.monitors.length) {
         monitorList.innerHTML = data.monitors.map(function (m) {
-          var statusClass = m.active ? "active" : "inactive";
-          var statusText = m.active ? "运行中" : "已停止";
-          var cancelBtn = m.active
-            ? '<button class="btn btn-sm btn-danger btn-cancel-monitor" data-gid="' + m.group_id + '">取消监控</button>'
-            : '<button class="btn btn-sm btn-danger btn-delete-monitor" data-gid="' + m.group_id + '">删除</button>';
+          var isActive = m.active;
           var accountInfo = m.account_name ? (' · 账号: ' + m.account_name) : '';
           return '<div class="monitor-item">' +
             '<div class="monitor-item-info">' +
               '<span class="monitor-item-name">' + (m.clan_name || "公会 " + m.group_id) + '</span>' +
               '<span class="monitor-item-detail">群号: ' + m.group_id + ' · 排名: ' + (m.rank || "--") + accountInfo + '</span>' +
             '</div>' +
-            '<div class="monitor-item-actions">' +
-              '<span class="monitor-status ' + statusClass + '">' + statusText + '</span>' +
-              cancelBtn +
-            '</div>' +
+            '<label class="toggle-switch">' +
+              '<input type="checkbox" class="toggle-monitor-cb" data-gid="' + m.group_id + '"' + (isActive ? ' checked' : '') + '>' +
+              '<span class="toggle-slider"></span>' +
+            '</label>' +
           '</div>';
         }).join("");
-        $$(".btn-cancel-monitor", monitorList).forEach(function (btn) {
-          btn.addEventListener("click", function () {
-            cancelMonitor(parseInt(this.dataset.gid), this);
-          });
-        });
-        $$(".btn-delete-monitor", monitorList).forEach(function (btn) {
-          btn.addEventListener("click", function () {
-            deleteMonitor(parseInt(this.dataset.gid));
+        $$(".toggle-monitor-cb", monitorList).forEach(function (cb) {
+          cb.addEventListener("change", function () {
+            toggleMonitor(parseInt(this.dataset.gid), this.checked, this);
           });
         });
       } else {
@@ -570,410 +540,57 @@
     }
   }
 
-  async function loadAccountList() {
+  async function loadAccountsInfo() {
+    var container = $("#settings-accounts-info");
+    container.innerHTML = '<div class="empty-state" style="color:var(--text-muted)">正在查询账号信息...</div>';
     try {
-      var accountList = $("#settings-account-list");
-      accountList.innerHTML = '<div class="empty-state" style="color:var(--text-muted)">正在查询账号信息...</div>';
       var accounts = await api("/accounts");
       if (accounts && accounts.length) {
-        accountList.innerHTML = accounts.map(function (acc) {
-          var clanInfo = acc.clan_name
-            ? '<span class="settings-account-item-clan">🏰 ' + acc.clan_name + '</span>'
-            : '<span class="settings-account-item-clan" style="color:var(--text-muted)">未加入公会</span>';
-          return '<div class="settings-account-item">' +
-            '<div class="settings-account-item-info">' +
-              '<span class="settings-account-item-name">' + (acc.name || "未设置昵称") + '</span>' +
-              '<span class="settings-account-item-detail">' +
-                'UID: ' + (acc.viewer_id || "--") +
-                ' · ' + (acc.platform_name || "未知") +
-              '</span>' +
-              clanInfo +
+        container.innerHTML = accounts.map(function (acc) {
+          return '<div class="account-info-card">' +
+            '<div class="account-info-header">' +
+              '<span class="account-info-platform">' + (acc.platform_name || "未知") + '</span>' +
             '</div>' +
-            '<button class="btn btn-sm btn-danger btn-unbind-account" data-aid="' + acc.id + '" data-name="' + (acc.name || "该账号") + '">解绑</button>' +
+            '<div class="info-row">' +
+              '<span class="info-label">UID</span>' +
+              '<span class="info-value">' + (acc.viewer_id || "--") + '</span>' +
+            '</div>' +
+            '<div class="info-row">' +
+              '<span class="info-label">昵称</span>' +
+              '<span class="info-value">' + (acc.name || "未设置") + '</span>' +
+            '</div>' +
+            '<div class="info-row">' +
+              '<span class="info-label">公会</span>' +
+              '<span class="info-value">' + (acc.clan_name || "未加入公会") + '</span>' +
+            '</div>' +
           '</div>';
         }).join("");
-        $$(".btn-unbind-account", accountList).forEach(function (btn) {
-          btn.addEventListener("click", function () {
-            unbindAccount(parseInt(this.dataset.aid), this.dataset.name);
-          });
-        });
       } else {
-        accountList.innerHTML = '<div class="empty-state">暂无绑定账号，请点击下方按钮绑定</div>';
+        container.innerHTML = '<div class="empty-state">暂无绑定账号，请在QQ中使用「绑定账号」指令绑定</div>';
       }
     } catch (err) {
-      toast("加载账号列表失败: " + err.message, "error");
+      container.innerHTML = '<div class="empty-state" style="color:var(--danger)">加载失败: ' + err.message + '</div>';
     }
   }
 
-  async function unbindAccount(accountId, name) {
-    if (!confirm('确认解绑账号「' + name + '」？解绑后相关数据不会删除。')) return;
+  async function toggleMonitor(groupId, enabled, checkbox) {
+    checkbox.disabled = true;
     try {
-      await api("/unbind_account", {
+      await api("/toggle_monitor", {
         method: "POST",
-        body: JSON.stringify({ account_id: accountId }),
+        body: JSON.stringify({ group_id: groupId, enabled: enabled }),
       });
-      toast("解绑账号成功", "success");
-      loadAccountList();
-    } catch (err) {
-      toast(err.message, "error");
-    }
-  }
-
-  function showBindAccountModal() {
-    showModal("绑定游戏账号", '\
-      <div class="modal-form-group">\
-        <label>服务器类型</label>\
-        <select id="modal-bind-platform">\
-          <option value="b">B服（Bilibili）</option>\
-          <option value="qu">渠道服</option>\
-          <option value="tw">台服</option>\
-        </select>\
-      </div>\
-      <div id="bind-fields-b" class="bind-platform-fields">\
-        <div class="modal-form-group">\
-          <label>B站账号</label>\
-          <input type="text" id="modal-bili-account" placeholder="输入B站账号">\
-        </div>\
-        <div class="modal-form-group">\
-          <label>B站密码</label>\
-          <input type="password" id="modal-bili-password" placeholder="输入B站密码">\
-        </div>\
-      </div>\
-      <div id="bind-fields-qu" class="bind-platform-fields" style="display:none">\
-        <div class="modal-form-group">\
-          <label>login_id</label>\
-          <input type="text" id="modal-qu-login-id" placeholder="输入login_id">\
-        </div>\
-        <div class="modal-form-group">\
-          <label>token</label>\
-          <input type="text" id="modal-qu-token" placeholder="输入token">\
-        </div>\
-        <div class="modal-form-group">\
-          <label>token2（可选，如果token被分成两段）</label>\
-          <input type="text" id="modal-qu-token2" placeholder="可选">\
-        </div>\
-      </div>\
-      <div id="bind-fields-tw" class="bind-platform-fields" style="display:none">\
-        <div class="modal-form-group">\
-          <label>short_udid</label>\
-          <input type="text" id="modal-tw-short-udid" placeholder="输入short_udid">\
-        </div>\
-        <div class="modal-form-group">\
-          <label>udid</label>\
-          <input type="text" id="modal-tw-udid" placeholder="输入udid">\
-        </div>\
-        <div class="modal-form-group">\
-          <label>viewer_id</label>\
-          <input type="number" id="modal-tw-viewer-id" placeholder="输入viewer_id">\
-        </div>\
-      </div>\
-      <p class="bind-hint">💡 绑定信息与QQ端「绑定账号」指令一致，绑定后将自动验证登录</p>\
-    ', async function () {
-      var platform = $("#modal-bind-platform").value;
-      var payload = { platform: platform };
-      if (platform === "b") {
-        payload.bili_account = $("#modal-bili-account").value.trim();
-        payload.bili_password = $("#modal-bili-password").value;
-        if (!payload.bili_account || !payload.bili_password) {
-          toast("请输入B站账号和密码", "error"); return;
-        }
-      } else if (platform === "qu") {
-        payload.login_id = $("#modal-qu-login-id").value.trim();
-        payload.token = $("#modal-qu-token").value.trim();
-        payload.token2 = $("#modal-qu-token2").value.trim();
-        if (!payload.login_id || !payload.token) {
-          toast("请输入login_id和token", "error"); return;
-        }
-      } else if (platform === "tw") {
-        payload.short_udid = $("#modal-tw-short-udid").value.trim();
-        payload.udid = $("#modal-tw-udid").value.trim();
-        payload.viewer_id = parseInt($("#modal-tw-viewer-id").value);
-        if (!payload.short_udid || !payload.udid || !payload.viewer_id) {
-          toast("请输入short_udid、udid和viewer_id", "error"); return;
-        }
-      }
-      // Show loading state
-      var confirmBtn = $("#modal-footer .btn-primary");
-      var cancelBtn = $("#modal-footer .btn-ghost");
-      var origText = confirmBtn ? confirmBtn.textContent : "";
-      if (confirmBtn) {
-        confirmBtn.disabled = true;
-        confirmBtn.textContent = "正在登录验证中...";
-        confirmBtn.style.opacity = "0.6";
-        confirmBtn.style.cursor = "not-allowed";
-      }
-      if (cancelBtn) { cancelBtn.disabled = true; cancelBtn.style.opacity = "0.6"; }
-      try {
-        var res = await api("/bind_account", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
-        closeModal();
-        showModal("✅ 绑定成功", '\
-          <div style="text-align:center;padding:1rem 0">\
-            <div style="font-size:2.5rem;margin-bottom:.75rem">🎉</div>\
-            <p style="font-size:1rem;margin:0 0 .5rem">游戏账号绑定成功！</p>\
-            ' + (res && res.viewer_id ? '<p style="font-size:.9rem;color:var(--text-muted);margin:0">UID: <strong>' + res.viewer_id + '</strong></p>' : '') + '\
-            ' + (res && res.name ? '<p style="font-size:.9rem;color:var(--text-muted);margin:.25rem 0 0">昵称: <strong>' + res.name + '</strong></p>' : '') + '\
-          </div>\
-        ', function () { closeModal(); });
-        loadAccountList();
-      } catch (err) {
-        closeModal();
-        showModal("❌ 绑定失败", '\
-          <div style="text-align:center;padding:1rem 0">\
-            <div style="font-size:2.5rem;margin-bottom:.75rem">😥</div>\
-            <p style="font-size:1rem;margin:0 0 .5rem">绑定失败</p>\
-            <p style="font-size:.85rem;color:var(--text-muted);margin:0;word-break:break-all">' + (err.message || "未知错误") + '</p>\
-          </div>\
-        ', function () { closeModal(); });
-      }
-    });
-
-    // Switch platform fields
-    setTimeout(function () {
-      var sel = $("#modal-bind-platform");
-      if (sel) {
-        sel.addEventListener("change", function () {
-          var val = this.value;
-          $$(".bind-platform-fields").forEach(function (el) { el.style.display = "none"; });
-          var target = $("#bind-fields-" + val);
-          if (target) target.style.display = "block";
-        });
-      }
-    }, 100);
-  }
-
-  async function cancelMonitor(groupId) {
-    if (!confirm("确认取消群 " + groupId + " 的出刀监控？")) return;
-    try {
-      await api("/cancel_monitor", {
-        method: "POST",
-        body: JSON.stringify({ group_id: groupId }),
-      });
-      toast("已取消出刀监控", "success");
+      toast(enabled ? "监控已开启" : "监控已关闭", "success");
       loadSettings();
     } catch (err) {
+      checkbox.checked = !enabled;
       toast(err.message, "error");
+    } finally {
+      checkbox.disabled = false;
     }
   }
 
-  async function deleteMonitor(groupId) {
-    if (!confirm("确认删除群 " + groupId + " 的监控记录？")) return;
-    try {
-      await api("/delete_monitor", {
-        method: "POST",
-        body: JSON.stringify({ group_id: groupId }),
-      });
-      toast("已删除监控记录", "success");
-      loadSettings();
-    } catch (err) {
-      toast(err.message, "error");
-    }
-  }
 
-  function showStartMonitorModal() {
-    showModal("开启出刀监控", '\
-      <div id="monitor-modal-loading" style="text-align:center;padding:1.5rem 0;color:var(--text-muted)">\
-        <p>正在加载账号和公会信息...</p>\
-      </div>\
-      <div id="monitor-modal-content" style="display:none">\
-        <div class="modal-form-group">\
-          <label>选择账号</label>\
-          <select id="modal-monitor-account"></select>\
-        </div>\
-        <div class="modal-form-group">\
-          <label>选择公会（群号）</label>\
-          <select id="modal-monitor-group"></select>\
-        </div>\
-      </div>\
-      <div id="monitor-modal-empty" style="display:none;text-align:center;padding:1rem 0;color:var(--text-muted)">\
-        <p>请先绑定游戏账号和公会</p>\
-      </div>\
-    ', async function () {
-      var accountId = parseInt($("#modal-monitor-account").value);
-      var groupId = parseInt($("#modal-monitor-group").value);
-      if (!accountId || !groupId) { toast("请选择账号和公会", "error"); return; }
-      var confirmBtn = $("#modal-footer .btn-primary");
-      var cancelBtn = $("#modal-footer .btn-ghost");
-      if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = "正在启动监控..."; confirmBtn.style.opacity = "0.6"; }
-      if (cancelBtn) { cancelBtn.disabled = true; cancelBtn.style.opacity = "0.6"; }
-      try {
-        var res = await api("/start_monitor", {
-          method: "POST",
-          body: JSON.stringify({ group_id: groupId, account_id: accountId }),
-        });
-        closeModal();
-        toast("监控已启动：" + (res.clan_name || "") + " 排名:" + (res.rank || "--"), "success");
-        loadSettings();
-      } catch (err) {
-        toast(err.message, "error");
-        if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = "确认"; confirmBtn.style.opacity = "1"; }
-        if (cancelBtn) { cancelBtn.disabled = false; cancelBtn.style.opacity = "1"; }
-      }
-    });
-
-    // Load accounts and clans
-    (async function () {
-      try {
-        var accounts = await api("/accounts");
-        var data = await api("/account_info");
-        var loading = $("#monitor-modal-loading");
-        var content = $("#monitor-modal-content");
-        var empty = $("#monitor-modal-empty");
-        if (!loading) return;
-        loading.style.display = "none";
-        if (accounts && accounts.length && data.clans && data.clans.length) {
-          content.style.display = "block";
-          var accSel = $("#modal-monitor-account");
-          accounts.forEach(function (acc) {
-            var opt = document.createElement("option");
-            opt.value = acc.id;
-            opt.textContent = (acc.name || "未命名") + "（" + (acc.platform_name || "未知") + " · UID:" + (acc.viewer_id || "--") + "）";
-            accSel.appendChild(opt);
-          });
-          var grpSel = $("#modal-monitor-group");
-          data.clans.forEach(function (c) {
-            var opt = document.createElement("option");
-            opt.value = c.group_id;
-            opt.textContent = (c.group_name || "公会") + "（群号:" + c.group_id + "）";
-            grpSel.appendChild(opt);
-          });
-        } else {
-          empty.style.display = "block";
-        }
-      } catch (err) {
-        var loading = $("#monitor-modal-loading");
-        if (loading) loading.innerHTML = '<p style="color:var(--danger)">加载失败: ' + (err.message || "未知错误") + '</p>';
-      }
-    })();
-  }
-
-  async function unbindClan(groupId) {
-    if (!confirm("确认解绑公会 " + groupId + "？")) return;
-    try {
-      await api("/unbind_clan", {
-        method: "POST",
-        body: JSON.stringify({ group_id: groupId }),
-      });
-      toast("解绑成功", "success");
-      loadSettings();
-      loadHome();
-    } catch (err) {
-      toast(err.message, "error");
-    }
-  }
-
-  function showBindClanModal() {
-    showModal("绑定公会", '\
-      <div id="clan-modal-loading" style="text-align:center;padding:1.5rem 0;color:var(--text-muted)">\
-        <p>正在从游戏服务器查询公会信息...</p>\
-      </div>\
-      <div id="clan-modal-content" style="display:none">\
-        <div class="modal-form-group">\
-          <label>选择公会</label>\
-          <select id="modal-clan-select">\
-          </select>\
-        </div>\
-        <div class="modal-form-group">\
-          <label>群号</label>\
-          <input type="number" id="modal-clan-gid" placeholder="输入QQ群号" required>\
-        </div>\
-        <div class="modal-form-group">\
-          <label>公会名称 (可选，默认使用游戏内公会名)</label>\
-          <input type="text" id="modal-clan-name" placeholder="输入公会名称">\
-        </div>\
-      </div>\
-      <div id="clan-modal-empty" style="display:none;text-align:center;padding:1rem 0;color:var(--text-muted)">\
-        <p>未找到公会信息，请先绑定游戏账号并加入公会</p>\
-        <p style="margin-top:.5rem">或者手动输入：</p>\
-        <div class="modal-form-group" style="margin-top:.75rem;text-align:left">\
-          <label>群号</label>\
-          <input type="number" id="modal-clan-gid-manual" placeholder="输入QQ群号">\
-        </div>\
-        <div class="modal-form-group" style="text-align:left">\
-          <label>公会名称 (可选)</label>\
-          <input type="text" id="modal-clan-name-manual" placeholder="输入公会名称" value="公会">\
-        </div>\
-      </div>\
-    ', async function () {
-      var gid, name;
-      var emptyDiv = $("#clan-modal-empty");
-      if (emptyDiv && emptyDiv.style.display !== "none") {
-        gid = parseInt($("#modal-clan-gid-manual").value);
-        name = $("#modal-clan-name-manual").value.trim() || "公会";
-      } else {
-        gid = parseInt($("#modal-clan-gid").value);
-        name = $("#modal-clan-name").value.trim();
-        var sel = $("#modal-clan-select");
-        if (sel && sel.value && !name) {
-          name = sel.options[sel.selectedIndex].getAttribute("data-name") || "公会";
-        }
-      }
-      if (!gid) { toast("请输入群号", "error"); return; }
-      if (!name) name = "公会";
-      try {
-        await api("/bind_clan", {
-          method: "POST",
-          body: JSON.stringify({ group_id: gid, group_name: name }),
-        });
-        toast("绑定成功", "success");
-        closeModal();
-        loadSettings();
-        loadHome();
-      } catch (err) {
-        toast(err.message, "error");
-      }
-    });
-
-    // Fetch clan list from accounts
-    (async function () {
-      try {
-        var clans = await api("/my_clans");
-        var loading = $("#clan-modal-loading");
-        var content = $("#clan-modal-content");
-        var empty = $("#clan-modal-empty");
-        if (!loading) return;
-        loading.style.display = "none";
-        var unboundClans = clans ? clans.filter(function (c) { return !c.already_bound; }) : [];
-        if (unboundClans.length > 0) {
-          content.style.display = "block";
-          var sel = $("#modal-clan-select");
-          unboundClans.forEach(function (c) {
-            var opt = document.createElement("option");
-            opt.value = c.clan_id;
-            opt.setAttribute("data-name", c.clan_name);
-            opt.textContent = c.clan_name + "（" + c.platform_name + " · " + c.account_name + " · " + c.member_count + "人）";
-            sel.appendChild(opt);
-          });
-          // Pre-fill clan name
-          if (unboundClans[0]) {
-            $("#modal-clan-name").value = unboundClans[0].clan_name;
-          }
-          sel.addEventListener("change", function () {
-            var idx = this.selectedIndex;
-            var opt = this.options[idx];
-            if (opt) {
-              $("#modal-clan-name").value = opt.getAttribute("data-name") || "";
-            }
-          });
-        } else {
-          empty.style.display = "block";
-        }
-      } catch (err) {
-        var loading = $("#clan-modal-loading");
-        if (loading) loading.innerHTML = '<p style="color:var(--danger)">查询失败: ' + (err.message || "未知错误") + '</p>\
-          <div class="modal-form-group" style="margin-top:.75rem;text-align:left">\
-            <label>群号</label>\
-            <input type="number" id="modal-clan-gid-manual" placeholder="输入QQ群号">\
-          </div>\
-          <div class="modal-form-group" style="text-align:left">\
-            <label>公会名称 (可选)</label>\
-            <input type="text" id="modal-clan-name-manual" placeholder="输入公会名称" value="公会">\
-          </div>';
-      }
-    })();
-  }
 
   function initChangePassword() {
     var form = $("#change-password-form");
@@ -1153,9 +770,6 @@
 
     // Settings
     initChangePassword();
-    $("#btn-bind-clan").addEventListener("click", showBindClanModal);
-    $("#btn-bind-account").addEventListener("click", showBindAccountModal);
-    $("#btn-start-monitor").addEventListener("click", showStartMonitorModal);
 
     // Try auto-login (check if cookie is still valid)
     autoLogin();

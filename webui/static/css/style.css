@@ -927,6 +927,76 @@ a:hover { text-decoration: underline; }
   gap: .5rem;
 }
 
+/* Account info cards in settings */
+.settings-card-wide {
+  grid-column: 1 / -1;
+}
+.settings-accounts-info {
+  margin-top: .75rem;
+}
+.account-info-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .75rem 1rem;
+  margin-bottom: .5rem;
+}
+.account-info-header {
+  margin-bottom: .5rem;
+}
+.account-info-platform {
+  display: inline-block;
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(99, 102, 241, .12);
+  padding: .15rem .55rem;
+  border-radius: 10px;
+}
+
+/* Toggle switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--border);
+  transition: .3s;
+  border-radius: 24px;
+}
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background: #fff;
+  transition: .3s;
+  border-radius: 50%;
+}
+.toggle-switch input:checked + .toggle-slider {
+  background: #22c55e;
+}
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+.toggle-switch input:disabled + .toggle-slider {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
 .settings-hint, .bind-hint {
   font-size: .8rem;
   color: var(--text-muted);
