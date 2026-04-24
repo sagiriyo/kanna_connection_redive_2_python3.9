@@ -49,7 +49,7 @@ class WebSetting(Enum):
     api_port = "12138"
     api_base = "/kanna_dependency"
     web_host = "yourhost"
-    web_port = "3141"
+    web_port = "12138"
     web_base = "/kanna_connection"
 
 

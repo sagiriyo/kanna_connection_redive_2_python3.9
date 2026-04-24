@@ -35,10 +35,6 @@ if _static_dir.exists():
 
 origins = [
     "http://localhost",
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:3141",
-    "http://yourhost:3141",
 ]
 
 app.add_middleware(
