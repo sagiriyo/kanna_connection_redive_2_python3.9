@@ -509,7 +509,7 @@ async def bind_account(
             if load_index := await check_client(client):
                 account.viewer_id = load_index.user_info.viewer_id
                 account.name = load_index.user_info.user_name
-                await pcr_sqla.add_account(user_id, account.dict(exclude_none=True))
+                await pcr_sqla.add_account(user_id, account.dict(exclude_none=True), multi=True)
                 await pcr_sqla.add_refresh(bili_account)
                 return {
                     "message": "绑定成功",
@@ -534,7 +534,7 @@ async def bind_account(
             if load_index := await check_client(client):
                 account.viewer_id = load_index.user_info.viewer_id
                 account.name = load_index.user_info.user_name
-                await pcr_sqla.add_account(user_id, account.dict(exclude_none=True))
+                await pcr_sqla.add_account(user_id, account.dict(exclude_none=True), multi=True)
                 return {
                     "message": "绑定成功",
                     "name": account.name,
@@ -555,7 +555,7 @@ async def bind_account(
             client = await query(account, True)
             if load_index := await check_client(client):
                 account.name = load_index.user_info.user_name
-                await pcr_sqla.add_account(user_id, account.dict(exclude_none=True))
+                await pcr_sqla.add_account(user_id, account.dict(exclude_none=True), multi=True)
                 return {
                     "message": "绑定成功",
                     "name": account.name,
