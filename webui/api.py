@@ -24,7 +24,7 @@ from loguru import logger as log
 
 from ..basedata import NoticeType, Platform
 from ..client import check_client, get_access_key, decrypt_access_key
-from ..login import query
+from ..login import query, client_cache
 from ..database.models import ClanBattleMember, Account, RefreshAccount
 from ..setting import WebSetting
 from .util import *
@@ -616,6 +616,13 @@ async def unbind_account(
     form: UnbindAccountForm, token: CookieCache = Depends(verify_cookie)
 ):
     user_id = int(token.user_id)
+    accounts = await pcr_sqla.query_account(user_id)
+    for acc in accounts:
+        if acc.id == form.account_id:
+            if acc.viewer_id:
+                _clan_cache.pop(acc.viewer_id, None)
+                client_cache.pop((acc.viewer_id, acc.platform), None)
+            break
     await pcr_sqla.delete_account(form.account_id, user_id)
     return "解绑账号成功"
 
