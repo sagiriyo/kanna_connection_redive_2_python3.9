@@ -91,3 +91,17 @@ class CorrectDaoInfo(BaseModel):
     type: str
     dao_id: int
     group_id: int
+
+
+class ChangePasswordForm(BaseModel):
+    new_password: str
+    confirm_password: str
+
+
+class BindClanForm(BaseModel):
+    group_id: int
+    group_name: str = "公会"
+
+
+class UnbindClanForm(BaseModel):
+    group_id: int

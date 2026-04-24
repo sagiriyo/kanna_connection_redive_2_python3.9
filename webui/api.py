@@ -18,6 +18,7 @@ from ..clanbattle import clanbattle_info, notice_update_time
 from ..util.auto_boss import clan_boss_info
 from ..clanbattle.base import clanbattle_report
 from ..database.dal import CookieCache, SLDao, pcr_sqla
+from ..database.models import ClanBattleMember
 from ..basedata import NoticeType
 from ..setting import WebSetting
 from .util import *
@@ -363,6 +364,70 @@ async def events(correct: CorrectDaoInfo, token: CookieCache = Depends(verify_co
         return "修改成功"
     else:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "请检查你输入了正确的出刀编号")
+
+
+@app.post("/change_password")
+async def change_password(
+    form: ChangePasswordForm, token: CookieCache = Depends(verify_cookie)
+):
+    if form.new_password != form.confirm_password:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "两次密码不一致")
+    if len(form.new_password) < 4:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "密码长度不能小于4位")
+    await pcr_sqla.web_update_password(token.user_id, form.new_password)
+    return "密码修改成功"
+
+
+@app.get("/account_info")
+async def account_info(token: CookieCache = Depends(verify_cookie)):
+    user_id = int(token.user_id)
+    result = {"user_id": user_id, "name": "", "viewer_id": None, "platform": None, "clans": []}
+    if accounts := await pcr_sqla.query_account(user_id):
+        acc = accounts[0]
+        result["name"] = acc.name or ""
+        result["viewer_id"] = acc.viewer_id
+        result["platform"] = acc.platform
+    if groups := await pcr_sqla.get_member_group(user_id):
+        result["clans"] = [
+            {"group_id": g.group_id, "group_name": g.group_name}
+            for g in groups
+        ]
+    # 监控状态
+    monitor_list = []
+    for gid, info in clanbattle_info.items():
+        monitor_list.append({
+            "group_id": gid,
+            "active": bool(info.loop_check),
+            "user_id": info.user_id,
+            "rank": info.rank,
+            "clan_name": info.clan_name,
+        })
+    result["monitors"] = monitor_list
+    return result
+
+
+@app.post("/bind_clan")
+async def bind_clan(
+    form: BindClanForm, token: CookieCache = Depends(verify_cookie)
+):
+    user_id = int(token.user_id)
+    await pcr_sqla.add_member(
+        ClanBattleMember(
+            group_id=form.group_id,
+            user_id=user_id,
+            group_name=form.group_name,
+        )
+    )
+    return "绑定公会成功"
+
+
+@app.post("/unbind_clan")
+async def unbind_clan(
+    form: UnbindClanForm, token: CookieCache = Depends(verify_cookie)
+):
+    user_id = int(token.user_id)
+    await pcr_sqla.delete_member(form.group_id, user_id)
+    return "解绑公会成功"
 
 
 @on_startup

@@ -73,6 +73,10 @@
             <span class="nav-icon">🔔</span>
             <span class="nav-text">通知</span>
           </li>
+          <li class="nav-item" data-page="settings">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-text">设置</span>
+          </li>
           <li class="nav-item" data-page="help">
             <span class="nav-icon">❓</span>
             <span class="nav-text">帮助</span>
@@ -255,6 +259,87 @@
               </div>
               <div id="tree-list" class="notice-list">
                 <div class="empty-state">暂无挂树</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 设置 -->
+        <div id="view-settings" class="view">
+          <div class="page-header">
+            <h2>设置</h2>
+          </div>
+          <div class="settings-grid">
+            <!-- 账号信息 -->
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <h3>👤 账号信息</h3>
+              </div>
+              <div class="settings-card-body">
+                <div class="info-row">
+                  <span class="info-label">QQ号</span>
+                  <span class="info-value" id="settings-qq">--</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">游戏昵称</span>
+                  <span class="info-value" id="settings-name">--</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">游戏ID</span>
+                  <span class="info-value" id="settings-viewer-id">--</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">服务器</span>
+                  <span class="info-value" id="settings-platform">--</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 修改密码 -->
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <h3>🔑 修改密码</h3>
+              </div>
+              <div class="settings-card-body">
+                <form id="change-password-form" autocomplete="off">
+                  <div class="form-group">
+                    <label for="new-password">新密码</label>
+                    <input type="password" id="new-password" placeholder="请输入新密码（至少4位）" required minlength="4">
+                  </div>
+                  <div class="form-group">
+                    <label for="confirm-password">确认密码</label>
+                    <input type="password" id="confirm-password" placeholder="再次输入新密码" required minlength="4">
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-block">修改密码</button>
+                </form>
+              </div>
+            </div>
+
+            <!-- 公会管理 -->
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <h3>🏰 公会管理</h3>
+              </div>
+              <div class="settings-card-body">
+                <div id="settings-clan-list" class="settings-clan-list">
+                  <div class="loading-placeholder">加载中...</div>
+                </div>
+                <div class="settings-clan-actions">
+                  <button class="btn btn-primary btn-sm" id="btn-bind-clan">+ 绑定公会</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 出刀监控状态 -->
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <h3>📡 出刀监控状态</h3>
+              </div>
+              <div class="settings-card-body">
+                <div id="settings-monitor-list" class="settings-monitor-list">
+                  <div class="loading-placeholder">加载中...</div>
+                </div>
+                <p class="settings-hint">💡 出刀监控需要在QQ群内发送「出刀监控」指令开启</p>
               </div>
             </div>
           </div>
