@@ -14,7 +14,7 @@ sv = Service(
 )
 
 
-@on_command("apply_login", aliases=("网页端登录"), only_to_me=True)
+@on_command("apply_login", aliases=("网页端登录",), only_to_me=True)
 async def apply_login(session: NoticeSession):
     if session.ctx.get("message_type") == "group":
         await session.send("请私聊bot发送吧~")
