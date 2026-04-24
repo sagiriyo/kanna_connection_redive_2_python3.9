@@ -926,10 +926,10 @@ a:hover { text-decoration: underline; }
   gap: .5rem;
 }
 
-.settings-hint {
+.settings-hint, .bind-hint {
   font-size: .8rem;
   color: var(--text-muted);
-  margin: 0;
+  margin: .75rem 0 0;
 }
 
 /* ============================

@@ -108,9 +108,18 @@ class UnbindClanForm(BaseModel):
 
 
 class BindAccountForm(BaseModel):
-    viewer_id: int
-    platform: int = 2
-    name: str = ""
+    platform: str  # "b" | "qu" | "tw"
+    # B服
+    bili_account: str = ""
+    bili_password: str = ""
+    # 渠道服
+    login_id: str = ""
+    token: str = ""
+    token2: str = ""
+    # 台服
+    short_udid: str = ""
+    udid: str = ""
+    viewer_id: int = 0
 
 
 class UnbindAccountForm(BaseModel):

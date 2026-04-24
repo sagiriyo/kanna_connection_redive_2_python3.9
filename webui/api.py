@@ -18,8 +18,13 @@ from ..clanbattle import clanbattle_info, notice_update_time
 from ..util.auto_boss import clan_boss_info
 from ..clanbattle.base import clanbattle_report
 from ..database.dal import CookieCache, SLDao, pcr_sqla
-from ..database.models import ClanBattleMember
-from ..basedata import NoticeType
+import traceback
+from loguru import logger as log
+
+from ..basedata import NoticeType, Platform
+from ..client import check_client, get_access_key, decrypt_access_key
+from ..login import query
+from ..database.models import ClanBattleMember, Account, RefreshAccount
 from ..setting import WebSetting
 from .util import *
 from .web_model import *
@@ -434,7 +439,7 @@ async def unbind_clan(
 async def list_accounts(token: CookieCache = Depends(verify_cookie)):
     user_id = int(token.user_id)
     accounts = await pcr_sqla.query_account(user_id)
-    platform_map = {2: "B服", 3: "渠道服", 4: "台服"}
+    platform_map = {0: "B服", 1: "渠道服", 2: "台服"}
     return [
         {
             "id": acc.id,
@@ -452,16 +457,86 @@ async def bind_account(
     form: BindAccountForm, token: CookieCache = Depends(verify_cookie)
 ):
     user_id = int(token.user_id)
-    await pcr_sqla.add_account(
-        user_id,
-        {
-            "user_id": user_id,
-            "viewer_id": form.viewer_id,
-            "platform": form.platform,
-            "name": form.name or None,
-        },
-    )
-    return "绑定账号成功"
+    try:
+        if form.platform == "b":
+            if not form.bili_account or not form.bili_password:
+                raise HTTPException(status.HTTP_400_BAD_REQUEST, "请输入B站账号和密码")
+            bili_account = RefreshAccount(account=form.bili_account, password=form.bili_password)
+            uid, access_key = await get_access_key(
+                bili_account.account, bili_account.password, user_id
+            )
+            account = Account(
+                user_id=user_id,
+                platform=Platform.b_id.value,
+                account=uid,
+                password=access_key,
+                refresh=bili_account.account,
+            )
+            client = await query(account, True)
+            if load_index := await check_client(client):
+                account.viewer_id = load_index.user_info.viewer_id
+                account.name = load_index.user_info.user_name
+                await pcr_sqla.add_account(user_id, account.dict(exclude_none=True))
+                await pcr_sqla.add_refresh(bili_account)
+                return {
+                    "message": "绑定成功",
+                    "name": account.name,
+                    "viewer_id": account.viewer_id,
+                }
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "绑定失败，请检查账号密码")
+
+        elif form.platform == "qu":
+            if not form.login_id or not form.token:
+                raise HTTPException(status.HTTP_400_BAD_REQUEST, "请输入login_id和token")
+            password = form.token
+            if form.token2:
+                password = decrypt_access_key(f"{form.token} {form.token2}")
+            account = Account(
+                user_id=user_id,
+                platform=Platform.qu_id.value,
+                account=form.login_id,
+                password=password,
+            )
+            client = await query(account, True)
+            if load_index := await check_client(client):
+                account.viewer_id = load_index.user_info.viewer_id
+                account.name = load_index.user_info.user_name
+                await pcr_sqla.add_account(user_id, account.dict(exclude_none=True))
+                return {
+                    "message": "绑定成功",
+                    "name": account.name,
+                    "viewer_id": account.viewer_id,
+                }
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "绑定失败，请检查数据是否完整")
+
+        elif form.platform == "tw":
+            if not form.short_udid or not form.udid or not form.viewer_id:
+                raise HTTPException(status.HTTP_400_BAD_REQUEST, "请输入short_udid、udid和viewer_id")
+            account = Account(
+                user_id=user_id,
+                platform=Platform.tw_id.value,
+                viewer_id=form.viewer_id,
+                account=form.short_udid,
+                password=form.udid,
+            )
+            client = await query(account, True)
+            if load_index := await check_client(client):
+                account.name = load_index.user_info.user_name
+                await pcr_sqla.add_account(user_id, account.dict(exclude_none=True))
+                return {
+                    "message": "绑定成功",
+                    "name": account.name,
+                    "viewer_id": account.viewer_id,
+                }
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "绑定失败，请检查数据是否完整")
+
+        else:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "不支持的服务器类型")
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error(traceback.format_exc())
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"绑定失败: {str(e)}")
 
 
 @app.post("/unbind_account")
