@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 from hoshino.modules.priconne.chara import fromid
 
 
-font = ImageFont.truetype(FontPath.pcr_font.value, 16)
+font = ImageFont.truetype(str(FontPath.pcr_font.value), 16)
 im_frame = Image.open(FilePath.img.value / "fendao" /
                       'frame.png').convert("RGBA").resize((64, 64))
 
