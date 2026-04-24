@@ -73,6 +73,10 @@
             <span class="nav-icon">🔔</span>
             <span class="nav-text">通知</span>
           </li>
+          <li class="nav-item" data-page="password">
+            <span class="nav-icon">🔑</span>
+            <span class="nav-text">修改密码</span>
+          </li>
           <li class="nav-item" data-page="settings">
             <span class="nav-icon">⚙️</span>
             <span class="nav-text">设置</span>
@@ -295,26 +299,6 @@
               </div>
             </div>
 
-            <!-- 修改密码 -->
-            <div class="settings-card">
-              <div class="settings-card-header">
-                <h3>🔑 修改密码</h3>
-              </div>
-              <div class="settings-card-body">
-                <form id="change-password-form" autocomplete="off">
-                  <div class="form-group">
-                    <label for="new-password">新密码</label>
-                    <input type="password" id="new-password" placeholder="请输入新密码（至少4位）" required minlength="4">
-                  </div>
-                  <div class="form-group">
-                    <label for="confirm-password">确认密码</label>
-                    <input type="password" id="confirm-password" placeholder="再次输入新密码" required minlength="4">
-                  </div>
-                  <button type="submit" class="btn btn-primary btn-block">修改密码</button>
-                </form>
-              </div>
-            </div>
-
             <!-- 公会管理 -->
             <div class="settings-card">
               <div class="settings-card-header">
@@ -340,6 +324,33 @@
                   <div class="loading-placeholder">加载中...</div>
                 </div>
                 <p class="settings-hint">💡 出刀监控需要在QQ群内发送「出刀监控」指令开启</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 修改密码 -->
+        <div id="view-password" class="view">
+          <div class="page-header">
+            <h2>修改密码</h2>
+          </div>
+          <div class="password-page">
+            <div class="settings-card password-card">
+              <div class="settings-card-header">
+                <h3>🔑 修改密码</h3>
+              </div>
+              <div class="settings-card-body">
+                <form id="change-password-form" autocomplete="off">
+                  <div class="form-group">
+                    <label for="new-password">新密码</label>
+                    <input type="password" id="new-password" placeholder="请输入新密码（至少4位）" required minlength="4">
+                  </div>
+                  <div class="form-group">
+                    <label for="confirm-password">确认密码</label>
+                    <input type="password" id="confirm-password" placeholder="再次输入新密码" required minlength="4">
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-block">修改密码</button>
+                </form>
               </div>
             </div>
           </div>

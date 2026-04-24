@@ -728,7 +728,7 @@
     $$(".nav-item").forEach(function (item) {
       item.addEventListener("click", function () {
         var page = this.dataset.page;
-        if (page !== "home" && page !== "help" && page !== "settings" && !currentGroupId) {
+        if (page !== "home" && page !== "help" && page !== "settings" && page !== "password" && !currentGroupId) {
           toast("请先在首页选择一个公会", "info");
           return;
         }

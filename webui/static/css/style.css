@@ -805,6 +805,17 @@ a:hover { text-decoration: underline; }
 .settings-card-body .form-group { margin-bottom: 1rem; }
 .settings-card-body .form-group:last-of-type { margin-bottom: 1.25rem; }
 
+/* Password Page */
+.password-page {
+  display: flex;
+  justify-content: center;
+  padding-top: 2rem;
+}
+.password-card {
+  width: 100%;
+  max-width: 420px;
+}
+
 .info-row {
   display: flex;
   justify-content: space-between;
