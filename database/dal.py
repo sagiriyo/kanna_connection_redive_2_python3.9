@@ -580,7 +580,7 @@ class SQALA:
     ):
         async with self.async_session() as session:
             async with session.begin():
-                if not token or user_id:
+                if not token and not user_id:
                     raise ValueError("需要指定token或者user")
                 sql = delete(CookieCache)
                 if token:

@@ -516,15 +516,20 @@
         monitorList.innerHTML = data.monitors.map(function (m) {
           var isActive = m.active;
           var accountInfo = m.account_name ? (' · 账号: ' + m.account_name) : '';
-          return '<div class="monitor-item">' +
+          var statusClass = isActive ? 'active' : 'inactive';
+          var statusText = isActive ? '运行中' : '已关闭';
+          return '<div class="monitor-item" data-gid="' + m.group_id + '">' +
             '<div class="monitor-item-info">' +
               '<span class="monitor-item-name">' + (m.clan_name || "公会 " + m.group_id) + '</span>' +
               '<span class="monitor-item-detail">群号: ' + m.group_id + ' · 排名: ' + (m.rank || "--") + accountInfo + '</span>' +
             '</div>' +
-            '<label class="toggle-switch">' +
-              '<input type="checkbox" class="toggle-monitor-cb" data-gid="' + m.group_id + '"' + (isActive ? ' checked' : '') + '>' +
-              '<span class="toggle-slider"></span>' +
-            '</label>' +
+            '<div class="monitor-item-right">' +
+              '<span class="monitor-status-text ' + statusClass + '">' + statusText + '</span>' +
+              '<label class="toggle-switch">' +
+                '<input type="checkbox" class="toggle-monitor-cb" data-gid="' + m.group_id + '"' + (isActive ? ' checked' : '') + '>' +
+                '<span class="toggle-slider"></span>' +
+              '</label>' +
+            '</div>' +
           '</div>';
         }).join("");
         $$(".toggle-monitor-cb", monitorList).forEach(function (cb) {
@@ -574,19 +579,40 @@
   }
 
   async function toggleMonitor(groupId, enabled, checkbox) {
+    var toggleLabel = checkbox.closest(".toggle-switch");
+    var monitorItem = checkbox.closest(".monitor-item");
+    var statusEl = monitorItem ? $(".monitor-status-text", monitorItem) : null;
+
     checkbox.disabled = true;
+    if (toggleLabel) toggleLabel.classList.add("loading");
+
     try {
-      await api("/toggle_monitor", {
+      var result = await api("/toggle_monitor", {
         method: "POST",
         body: JSON.stringify({ group_id: groupId, enabled: enabled }),
       });
       toast(enabled ? "监控已开启" : "监控已关闭", "success");
-      loadSettings();
+
+      if (statusEl) {
+        statusEl.className = "monitor-status-text " + (enabled ? "active" : "inactive");
+        statusEl.textContent = enabled ? "运行中" : "已关闭";
+      }
+
+      if (enabled && result && monitorItem) {
+        var nameEl = $(".monitor-item-name", monitorItem);
+        if (result.clan_name && nameEl) nameEl.textContent = result.clan_name;
+        var detailEl = $(".monitor-item-detail", monitorItem);
+        if (result.rank && detailEl) {
+          var currentText = detailEl.textContent;
+          detailEl.textContent = currentText.replace(/排名: [^\s·]+/, "排名: " + result.rank);
+        }
+      }
     } catch (err) {
       checkbox.checked = !enabled;
       toast(err.message, "error");
     } finally {
       checkbox.disabled = false;
+      if (toggleLabel) toggleLabel.classList.remove("loading");
     }
   }
 
@@ -736,7 +762,12 @@
     });
 
     // Logout
-    $("#btn-logout").addEventListener("click", function () {
+    $("#btn-logout").addEventListener("click", async function () {
+      try {
+        await api("/logout", { method: "POST" });
+      } catch (err) {
+        // ignore errors - still clear local state
+      }
       currentGroupId = null;
       currentUserId = null;
       closeSse();

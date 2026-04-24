@@ -89,6 +89,13 @@ async def check_user(user: User, response: Response):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "密码错误")
 
 
+@app.post("/logout")
+async def logout(response: Response, token: CookieCache = Depends(verify_cookie)):
+    await pcr_sqla.web_delete_cookie(token.token)
+    response.delete_cookie("token")
+    return {"message": "已退出登录"}
+
+
 @app.get("/home")
 async def home_info(token: CookieCache = Depends(verify_cookie)):
     user_id = int(token.user_id)
