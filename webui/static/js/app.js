@@ -686,13 +686,29 @@
           method: "POST",
           body: JSON.stringify(payload),
         });
-        var msg = "绑定成功";
-        if (res && res.name) msg += "，游戏昵称: " + res.name;
-        toast(msg, "success");
         closeModal();
+        var info = [];
+        if (res && res.viewer_id) info.push("UID: " + res.viewer_id);
+        if (res && res.name) info.push("昵称: " + res.name);
+        var detail = info.length ? "\n" + info.join("  |  ") : "";
+        showModal("✅ 绑定成功", '\
+          <div style="text-align:center;padding:1rem 0">\
+            <div style="font-size:2.5rem;margin-bottom:.75rem">🎉</div>\
+            <p style="font-size:1rem;margin:0 0 .5rem">游戏账号绑定成功！</p>\
+            ' + (res && res.viewer_id ? '<p style="font-size:.9rem;color:var(--text-muted);margin:0">UID: <strong>' + res.viewer_id + '</strong></p>' : '') + '\
+            ' + (res && res.name ? '<p style="font-size:.9rem;color:var(--text-muted);margin:.25rem 0 0">昵称: <strong>' + res.name + '</strong></p>' : '') + '\
+          </div>\
+        ', function () { closeModal(); });
         loadAccountList();
       } catch (err) {
-        toast(err.message, "error");
+        closeModal();
+        showModal("❌ 绑定失败", '\
+          <div style="text-align:center;padding:1rem 0">\
+            <div style="font-size:2.5rem;margin-bottom:.75rem">😥</div>\
+            <p style="font-size:1rem;margin:0 0 .5rem">绑定失败</p>\
+            <p style="font-size:.85rem;color:var(--text-muted);margin:0;word-break:break-all">' + (err.message || "未知错误") + '</p>\
+          </div>\
+        ', function () { closeModal(); });
       }
     });
 
