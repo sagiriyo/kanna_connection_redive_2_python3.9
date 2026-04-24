@@ -567,8 +567,9 @@
 
   async function loadAccountList() {
     try {
-      var accounts = await api("/accounts");
       var accountList = $("#settings-account-list");
+      accountList.innerHTML = '<div class="empty-state" style="color:var(--text-muted)">正在查询账号信息...</div>';
+      var accounts = await api("/accounts");
       if (accounts && accounts.length) {
         accountList.innerHTML = accounts.map(function (acc) {
           var clanInfo = acc.clan_name

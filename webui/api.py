@@ -444,6 +444,23 @@ async def unbind_clan(
     return "解绑公会成功"
 
 
+async def _get_clan_info(acc: Account):
+    """尝试获取账号所在公会信息，失败返回 None"""
+    for attempt in range(2):
+        try:
+            client = await query(acc, is_force=True)
+            home = await client.home_index()
+            if home.user_clan and home.user_clan.clan_id:
+                return {
+                    "clan_name": home.user_clan.clan_name,
+                    "clan_id": home.user_clan.clan_id,
+                }
+            return None
+        except Exception as e:
+            log.warning(f"查询账号 {acc.viewer_id} 公会信息失败(第{attempt+1}次): {e}")
+    return None
+
+
 @app.get("/accounts")
 async def list_accounts(token: CookieCache = Depends(verify_cookie)):
     user_id = int(token.user_id)
@@ -460,14 +477,10 @@ async def list_accounts(token: CookieCache = Depends(verify_cookie)):
             "clan_name": None,
             "clan_id": None,
         }
-        try:
-            client = await query(acc)
-            home = await client.home_index()
-            if home.user_clan and home.user_clan.clan_id:
-                item["clan_name"] = home.user_clan.clan_name
-                item["clan_id"] = home.user_clan.clan_id
-        except Exception:
-            pass
+        clan = await _get_clan_info(acc)
+        if clan:
+            item["clan_name"] = clan["clan_name"]
+            item["clan_id"] = clan["clan_id"]
         result.append(item)
     return result
 
@@ -600,7 +613,7 @@ async def my_clans(token: CookieCache = Depends(verify_cookie)):
     seen_clan_ids = set()
     for acc in accounts:
         try:
-            client = await query(acc)
+            client = await query(acc, is_force=True)
             home = await client.home_index()
             if home.user_clan and home.user_clan.clan_id:
                 clan_id = home.user_clan.clan_id
