@@ -104,6 +104,7 @@
     if (name === "dashboard" && currentGroupId) loadDashboard(currentGroupId);
     if (name === "report" && currentGroupId) loadReport(currentGroupId);
     if (name === "notice" && currentGroupId) loadNotice(currentGroupId);
+    if (name === "settings") loadSettings();
   }
 
   /* ============================
@@ -498,6 +499,135 @@
   }
 
   /* ============================
+     Settings
+     ============================ */
+  async function loadSettings() {
+    try {
+      var data = await api("/account_info");
+      var platformMap = { 2: "B服", 3: "渠道服", 4: "台服" };
+      $("#settings-qq").textContent = data.user_id || "--";
+      $("#settings-name").textContent = data.name || "未绑定";
+      $("#settings-viewer-id").textContent = data.viewer_id || "未绑定";
+      $("#settings-platform").textContent = platformMap[data.platform] || "未绑定";
+
+      // Clan list
+      var clanList = $("#settings-clan-list");
+      if (data.clans && data.clans.length) {
+        clanList.innerHTML = data.clans.map(function (c) {
+          return '<div class="settings-clan-item">' +
+            '<div class="settings-clan-item-info">' +
+              '<span class="settings-clan-item-name">' + (c.group_name || "公会") + '</span>' +
+              '<span class="settings-clan-item-id">群号: ' + c.group_id + '</span>' +
+            '</div>' +
+            '<button class="btn btn-sm btn-danger btn-unbind-clan" data-gid="' + c.group_id + '">解绑</button>' +
+          '</div>';
+        }).join("");
+        $$(".btn-unbind-clan", clanList).forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            unbindClan(parseInt(this.dataset.gid));
+          });
+        });
+      } else {
+        clanList.innerHTML = '<div class="empty-state">暂无绑定公会</div>';
+      }
+
+      // Monitor list
+      var monitorList = $("#settings-monitor-list");
+      if (data.monitors && data.monitors.length) {
+        monitorList.innerHTML = data.monitors.map(function (m) {
+          var statusClass = m.active ? "active" : "inactive";
+          var statusText = m.active ? "运行中" : "已停止";
+          return '<div class="monitor-item">' +
+            '<div class="monitor-item-info">' +
+              '<span class="monitor-item-name">' + (m.clan_name || "公会 " + m.group_id) + '</span>' +
+              '<span class="monitor-item-detail">群号: ' + m.group_id + ' · 排名: ' + (m.rank || "--") + '</span>' +
+            '</div>' +
+            '<span class="monitor-status ' + statusClass + '">' + statusText + '</span>' +
+          '</div>';
+        }).join("");
+      } else {
+        monitorList.innerHTML = '<div class="empty-state">暂无监控记录</div>';
+      }
+    } catch (err) {
+      toast("加载设置失败: " + err.message, "error");
+    }
+  }
+
+  async function unbindClan(groupId) {
+    if (!confirm("确认解绑公会 " + groupId + "？")) return;
+    try {
+      await api("/unbind_clan", {
+        method: "POST",
+        body: JSON.stringify({ group_id: groupId }),
+      });
+      toast("解绑成功", "success");
+      loadSettings();
+      loadHome();
+    } catch (err) {
+      toast(err.message, "error");
+    }
+  }
+
+  function showBindClanModal() {
+    showModal("绑定公会", '\
+      <div class="modal-form-group">\
+        <label>群号</label>\
+        <input type="number" id="modal-clan-gid" placeholder="输入QQ群号" required>\
+      </div>\
+      <div class="modal-form-group">\
+        <label>公会名称 (可选)</label>\
+        <input type="text" id="modal-clan-name" placeholder="输入公会名称" value="公会">\
+      </div>\
+    ', async function () {
+      var gid = parseInt($("#modal-clan-gid").value);
+      var name = $("#modal-clan-name").value.trim() || "公会";
+      if (!gid) { toast("请输入群号", "error"); return; }
+      try {
+        await api("/bind_clan", {
+          method: "POST",
+          body: JSON.stringify({ group_id: gid, group_name: name }),
+        });
+        toast("绑定成功", "success");
+        closeModal();
+        loadSettings();
+        loadHome();
+      } catch (err) {
+        toast(err.message, "error");
+      }
+    });
+  }
+
+  function initChangePassword() {
+    var form = $("#change-password-form");
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      var newPwd = $("#new-password").value;
+      var confirmPwd = $("#confirm-password").value;
+      if (newPwd !== confirmPwd) {
+        toast("两次密码不一致", "error");
+        return;
+      }
+      if (newPwd.length < 4) {
+        toast("密码长度不能小于4位", "error");
+        return;
+      }
+      try {
+        await api("/change_password", {
+          method: "POST",
+          body: JSON.stringify({
+            new_password: newPwd,
+            confirm_password: confirmPwd,
+          }),
+        });
+        toast("密码修改成功", "success");
+        form.reset();
+      } catch (err) {
+        toast(err.message, "error");
+      }
+    });
+  }
+
+  /* ============================
      Correct Dao Modal
      ============================ */
   function showCorrectModal(daoId) {
@@ -597,7 +727,7 @@
     $$(".nav-item").forEach(function (item) {
       item.addEventListener("click", function () {
         var page = this.dataset.page;
-        if ((page === "dashboard" || page === "report" || page === "notice") && !currentGroupId) {
+        if (page !== "home" && page !== "help" && page !== "settings" && !currentGroupId) {
           toast("请先在首页选择一个公会", "info");
           return;
         }
@@ -642,6 +772,10 @@
     $("#btn-add-subscribe").addEventListener("click", function () { addNotice(0); });
     $("#btn-add-apply").addEventListener("click", function () { addNotice(2); });
     $("#btn-add-tree").addEventListener("click", function () { addNotice(1); });
+
+    // Settings
+    initChangePassword();
+    $("#btn-bind-clan").addEventListener("click", showBindClanModal);
 
     // Try auto-login (check if cookie is still valid)
     autoLogin();

@@ -526,6 +526,15 @@ class SQALA:
                     account.priority = user.priority
                 await session.merge(account)
 
+    async def web_update_password(self, account: str, new_password: str):
+        async with self.async_session() as session:
+            async with session.begin():
+                await session.execute(
+                    update(WebAccount)
+                    .where(WebAccount.account == account)
+                    .values(password=new_password, temp=False)
+                )
+
     async def web_add_cookie(self, token: str, user_id: str):
         async with self.async_session() as session:
             async with session.begin():
