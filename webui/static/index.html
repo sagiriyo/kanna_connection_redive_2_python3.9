@@ -275,7 +275,7 @@
           </div>
           <div class="settings-grid">
             <!-- 账号信息 -->
-            <div class="settings-card">
+            <div class="settings-card settings-card-wide">
               <div class="settings-card-header">
                 <h3>👤 账号信息</h3>
               </div>
@@ -284,50 +284,20 @@
                   <span class="info-label">QQ号</span>
                   <span class="info-value" id="settings-qq">--</span>
                 </div>
-              </div>
-            </div>
-
-            <!-- 绑定账号管理 -->
-            <div class="settings-card">
-              <div class="settings-card-header">
-                <h3>🎮 绑定账号管理</h3>
-              </div>
-              <div class="settings-card-body">
-                <div id="settings-account-list" class="settings-account-list">
-                  <div class="loading-placeholder">加载中...</div>
-                </div>
-                <div class="settings-clan-actions">
-                  <button class="btn btn-primary btn-sm" id="btn-bind-account">+ 绑定新账号</button>
+                <div id="settings-accounts-info" class="settings-accounts-info">
+                  <div class="loading-placeholder">正在查询绑定账号...</div>
                 </div>
               </div>
             </div>
 
-            <!-- 公会管理 -->
+            <!-- 出刀监控开关 -->
             <div class="settings-card">
               <div class="settings-card-header">
-                <h3>🏰 公会管理</h3>
-              </div>
-              <div class="settings-card-body">
-                <div id="settings-clan-list" class="settings-clan-list">
-                  <div class="loading-placeholder">加载中...</div>
-                </div>
-                <div class="settings-clan-actions">
-                  <button class="btn btn-primary btn-sm" id="btn-bind-clan">+ 绑定公会</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- 出刀监控状态 -->
-            <div class="settings-card">
-              <div class="settings-card-header">
-                <h3>📡 出刀监控状态</h3>
+                <h3>📡 出刀监控</h3>
               </div>
               <div class="settings-card-body">
                 <div id="settings-monitor-list" class="settings-monitor-list">
                   <div class="loading-placeholder">加载中...</div>
-                </div>
-                <div class="settings-clan-actions">
-                  <button class="btn btn-sm" id="btn-start-monitor">+ 开启出刀监控</button>
                 </div>
                 <p class="settings-hint">💡 也可以在QQ群内发送「出刀监控」指令开启</p>
               </div>

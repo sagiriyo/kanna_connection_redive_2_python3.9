@@ -694,6 +694,62 @@ async def start_monitor(
     }
 
 
+@app.post("/toggle_monitor")
+async def toggle_monitor(
+    form: ToggleMonitorForm, token: CookieCache = Depends(verify_cookie)
+):
+    user_id = int(token.user_id)
+    group_id = form.group_id
+
+    if form.enabled:
+        # Turn on: find the monitor's account and restart
+        if group_id in clanbattle_info and clanbattle_info[group_id].loop_check:
+            return {"message": "监控已在运行中"}
+
+        accounts = await pcr_sqla.query_account(user_id)
+        if not accounts:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "未找到绑定账号，请先在QQ中绑定账号")
+
+        # Use the first available account
+        account = accounts[0]
+
+        if group_id not in clanbattle_info:
+            clanbattle_info[group_id] = ClanBattle(group_id)
+        clan_info = clanbattle_info[group_id]
+
+        try:
+            client = await query(account, True)
+            await clan_info.init(client, user_id, None)
+        except Exception as e:
+            log.error(traceback.format_exc())
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                f"启动监控失败: {str(e)}"
+            )
+
+        loop_num = clan_info.loop_num
+        if account.viewer_id and hasattr(clan_info, 'clan_id'):
+            _clan_cache[account.viewer_id] = {
+                "clan_name": clan_info.clan_name,
+                "clan_id": clan_info.clan_id,
+            }
+        await clanbattle_pool.add_task(
+            PrioritizedQueryItem(data=ClanbattleItem(clan_info, loop_num))
+        )
+        return {"message": "监控已开启", "clan_name": clan_info.clan_name, "rank": clan_info.rank}
+    else:
+        # Turn off
+        if group_id not in clanbattle_info:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "该群未开启出刀监控")
+        clan_info = clanbattle_info[group_id]
+        if user_id != clan_info.user_id:
+            web_user = await pcr_sqla.web_query_user(user_id)
+            if not web_user or web_user.priority < 1:
+                raise HTTPException(status.HTTP_403_FORBIDDEN, "你不是监控人或管理员")
+        clan_info.loop_num += 1
+        return {"message": "监控已关闭"}
+
+
 @app.get("/my_clans")
 async def my_clans(token: CookieCache = Depends(verify_cookie)):
     user_id = int(token.user_id)

@@ -133,3 +133,8 @@ class CancelMonitorForm(BaseModel):
 class StartMonitorForm(BaseModel):
     group_id: int
     account_id: int
+
+
+class ToggleMonitorForm(BaseModel):
+    group_id: int
+    enabled: bool
