@@ -428,6 +428,21 @@ async def account_info(token: CookieCache = Depends(verify_cookie)):
     return result
 
 
+async def clear_web_cache_for_unbind(user_id: int, group_id: int):
+    """当用户删除公会绑定时，清除网页端相关缓存"""
+    # 清除账号的公会信息缓存
+    accounts = await pcr_sqla.query_account(user_id)
+    for acc in accounts:
+        if acc.viewer_id and acc.viewer_id in _clan_cache:
+            del _clan_cache[acc.viewer_id]
+    # 如果该用户是出刀监控的发起人，停止并清除监控记录
+    if group_id in clanbattle_info:
+        clan_info = clanbattle_info[group_id]
+        if clan_info.user_id == user_id:
+            clan_info.loop_num += 1
+            del clanbattle_info[group_id]
+
+
 @app.post("/bind_clan")
 async def bind_clan(
     form: BindClanForm, token: CookieCache = Depends(verify_cookie)
@@ -449,6 +464,7 @@ async def unbind_clan(
 ):
     user_id = int(token.user_id)
     await pcr_sqla.delete_member(form.group_id, user_id)
+    await clear_web_cache_for_unbind(user_id, form.group_id)
     return "解绑公会成功"
 
 

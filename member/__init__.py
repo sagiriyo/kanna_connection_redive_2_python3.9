@@ -3,6 +3,7 @@ from ..util.tools import get_qid
 from ..database.dal import pcr_sqla
 from ..database.models import Account, ClanBattleMember
 from ..basedata import AllowLevel
+from ..webui.api import clear_web_cache_for_unbind
 from hoshino import Service, priv
 from hoshino.typing import CQEvent
 from hoshino.typing import HoshinoBot
@@ -78,6 +79,7 @@ async def delete_clan_bind(bot: HoshinoBot, ev: CQEvent):
         await bot.send(ev, msg)
         return
     await pcr_sqla.delete_member(ev.group_id, qq_id)
+    await clear_web_cache_for_unbind(qq_id, ev.group_id)
     await bot.send(ev, "删除本群公会绑定成功")
 
 
@@ -85,4 +87,5 @@ async def delete_clan_bind(bot: HoshinoBot, ev: CQEvent):
 async def exit_clan(bot: HoshinoBot, ev: CQEvent):
     group_id = int(ev.message.extract_plain_text().strip())
     await pcr_sqla.delete_member(group_id, ev.user_id)
+    await clear_web_cache_for_unbind(ev.user_id, group_id)
     await bot.send(ev, "退出公会成功")
