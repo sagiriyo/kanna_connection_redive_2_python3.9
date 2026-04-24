@@ -1,6 +1,7 @@
 .vscode/*
 .vscode
 *.pyc
+__pycache__/
 rungroup.json
 clanbattlework.json
 data.db

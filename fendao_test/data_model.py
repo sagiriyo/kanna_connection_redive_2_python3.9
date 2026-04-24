@@ -1,6 +1,10 @@
-from pydantic import BaseModel
 from typing import List
 from typing import TypedDict
+
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 
 class DetailItem(BaseModel):

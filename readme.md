@@ -1,5 +1,7 @@
 # 你只需要出刀2（KCRR 环奈连结R Relink）
 
+> 本分支已适配 **Python 3.9**，可在 Python 3.9+ 环境下正常运行。
+
 ## 📋 功能更新
 
 相比 [第一版](https://github.com/SonderXiaoming/kanna_connection_redive)，KCRR 在功能上进行了大幅度的更新和优化，主要包括：
