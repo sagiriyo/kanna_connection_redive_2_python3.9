@@ -40,6 +40,23 @@
     try { return JSON.parse(text); } catch { return text; }
   }
 
+  function qqAvatarUrl(qq, size) {
+    return "https://q1.qlogo.cn/g?b=qq&nk=" + qq + "&s=" + (size || 640);
+  }
+
+  function setAvatar(imgEl, textEl, qq, name) {
+    var url = qqAvatarUrl(qq);
+    imgEl.src = url;
+    imgEl.alt = name || "";
+    imgEl.style.display = "";
+    textEl.style.display = "none";
+    imgEl.onerror = function () {
+      imgEl.style.display = "none";
+      textEl.style.display = "";
+      textEl.textContent = (name || "栞")[0];
+    };
+  }
+
   function formatNum(n) {
     if (n >= 100000000) return (n / 100000000).toFixed(2) + "亿";
     if (n >= 10000) return (n / 10000).toFixed(1) + "万";
@@ -122,6 +139,34 @@
     var params = new URLSearchParams(location.search);
     if (params.get("account")) $("#login-account").value = params.get("account");
     if (params.get("password")) $("#login-password").value = params.get("password");
+
+    // Live QQ avatar preview on login page
+    var loginAccountInput = $("#login-account");
+    var avatarDebounce = null;
+    function updateLoginAvatar() {
+      var qq = loginAccountInput.value.trim();
+      if (/^\d{5,11}$/.test(qq)) {
+        var img = $("#login-avatar-img");
+        img.src = qqAvatarUrl(qq, 100);
+        img.onload = function () {
+          $("#login-avatar-wrap").style.display = "";
+          $("#login-logo").style.display = "none";
+        };
+        img.onerror = function () {
+          $("#login-avatar-wrap").style.display = "none";
+          $("#login-logo").style.display = "";
+        };
+      } else {
+        $("#login-avatar-wrap").style.display = "none";
+        $("#login-logo").style.display = "";
+      }
+    }
+    loginAccountInput.addEventListener("input", function () {
+      clearTimeout(avatarDebounce);
+      avatarDebounce = setTimeout(updateLoginAvatar, 400);
+    });
+    // Trigger on load if pre-filled
+    if (loginAccountInput.value.trim()) updateLoginAvatar();
   }
 
   /* ============================
@@ -136,7 +181,17 @@
       $("#user-name").textContent = data.name;
       var roleMap = { 0: "成员", 1: "管理员", 2: "超级管理" };
       $("#user-role").textContent = roleMap[data.priority] || "成员";
-      $("#user-avatar").textContent = (data.name || "栞")[0];
+
+      // Set QQ avatar in sidebar
+      setAvatar(
+        $("#user-avatar-img"), $("#user-avatar-text"),
+        data.user_id, data.name
+      );
+      // Set QQ avatar in welcome card
+      setAvatar(
+        $("#welcome-avatar-img"), $("#welcome-avatar-text"),
+        data.user_id, data.name
+      );
 
       var clanList = $("#clan-list");
       if (data.clan && data.clan.length) {

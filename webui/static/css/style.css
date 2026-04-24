@@ -94,6 +94,21 @@ a:hover { text-decoration: underline; }
 .login-header h1 { font-size: 1.6rem; font-weight: 700; }
 .login-subtitle { color: var(--text-secondary); font-size: .9rem; margin-top: .25rem; }
 
+.login-avatar-wrap {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin: 0 auto .5rem;
+  box-shadow: 0 4px 16px rgba(99,102,241,.35);
+  border: 3px solid rgba(99,102,241,.4);
+  animation: avatarFadeIn .4s ease;
+}
+.login-avatar-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+@keyframes avatarFadeIn { from { opacity: 0; transform: scale(.8); } to { opacity: 1; transform: none; } }
+
 .form-group { margin-bottom: 1.25rem; }
 .form-group label {
   display: block;
@@ -215,6 +230,21 @@ a:hover { text-decoration: underline; }
   font-size: .9rem;
   font-weight: 700;
   flex-shrink: 0;
+  overflow: hidden;
+}
+.avatar-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.avatar-img-lg {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.avatar-text-lg {
+  font-size: 1.6rem;
+  font-weight: 700;
 }
 .user-name { font-size: .9rem; font-weight: 600; }
 .user-role { font-size: .75rem; color: var(--text-muted); }
@@ -347,6 +377,21 @@ a:hover { text-decoration: underline; }
   border-radius: var(--radius-lg);
   padding: 1.5rem 2rem;
   margin-bottom: .5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+.welcome-avatar {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(99,102,241,.3);
+  border: 2px solid rgba(99,102,241,.3);
 }
 .welcome-card h3 { font-size: 1.15rem; margin-bottom: .35rem; }
 .saying { color: var(--text-muted); font-size: .85rem; font-style: italic; }

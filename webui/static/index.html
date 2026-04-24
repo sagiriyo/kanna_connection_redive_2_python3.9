@@ -14,7 +14,10 @@
       <div class="login-wrapper">
         <div class="login-card">
           <div class="login-header">
-            <div class="login-logo">⚔️</div>
+            <div class="login-avatar-wrap" id="login-avatar-wrap" style="display:none">
+              <img id="login-avatar-img" class="login-avatar-img" src="" alt="">
+            </div>
+            <div class="login-logo" id="login-logo">⚔️</div>
             <h1>环奈连结R</h1>
             <p class="login-subtitle">公会战管理系统</p>
           </div>
@@ -44,7 +47,10 @@
           <button id="sidebar-toggle" class="sidebar-toggle" title="收起">☰</button>
         </div>
         <div class="sidebar-user" id="sidebar-user-info">
-          <div class="user-avatar" id="user-avatar">栞</div>
+          <div class="user-avatar" id="user-avatar">
+            <img id="user-avatar-img" class="avatar-img" src="" alt="" style="display:none">
+            <span id="user-avatar-text">栞</span>
+          </div>
           <div class="user-meta">
             <div class="user-name" id="user-name">加载中...</div>
             <div class="user-role" id="user-role">成员</div>
@@ -90,6 +96,10 @@
           </div>
           <div class="home-welcome">
             <div class="welcome-card">
+              <div class="welcome-avatar" id="welcome-avatar">
+                <img id="welcome-avatar-img" class="avatar-img-lg" src="" alt="" style="display:none">
+                <span id="welcome-avatar-text" class="avatar-text-lg">栞</span>
+              </div>
               <div class="welcome-text">
                 <h3 id="welcome-name">加载中...</h3>
                 <p id="welcome-saying" class="saying"></p>
