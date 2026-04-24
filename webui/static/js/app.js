@@ -539,11 +539,12 @@
           var statusText = m.active ? "运行中" : "已停止";
           var cancelBtn = m.active
             ? '<button class="btn btn-sm btn-danger btn-cancel-monitor" data-gid="' + m.group_id + '">取消监控</button>'
-            : '<span class="monitor-status inactive">已停止</span>';
+            : '';
+          var accountInfo = m.account_name ? (' · 账号: ' + m.account_name) : '';
           return '<div class="monitor-item">' +
             '<div class="monitor-item-info">' +
               '<span class="monitor-item-name">' + (m.clan_name || "公会 " + m.group_id) + '</span>' +
-              '<span class="monitor-item-detail">群号: ' + m.group_id + ' · 排名: ' + (m.rank || "--") + '</span>' +
+              '<span class="monitor-item-detail">群号: ' + m.group_id + ' · 排名: ' + (m.rank || "--") + accountInfo + '</span>' +
             '</div>' +
             '<div class="monitor-item-actions">' +
               '<span class="monitor-status ' + statusClass + '">' + statusText + '</span>' +
@@ -553,7 +554,7 @@
         }).join("");
         $$(".btn-cancel-monitor", monitorList).forEach(function (btn) {
           btn.addEventListener("click", function () {
-            cancelMonitor(parseInt(this.dataset.gid));
+            cancelMonitor(parseInt(this.dataset.gid), this);
           });
         });
       } else {
@@ -570,13 +571,17 @@
       var accountList = $("#settings-account-list");
       if (accounts && accounts.length) {
         accountList.innerHTML = accounts.map(function (acc) {
+          var clanInfo = acc.clan_name
+            ? '<span class="settings-account-item-clan">🏰 ' + acc.clan_name + '</span>'
+            : '<span class="settings-account-item-clan" style="color:var(--text-muted)">未加入公会</span>';
           return '<div class="settings-account-item">' +
             '<div class="settings-account-item-info">' +
               '<span class="settings-account-item-name">' + (acc.name || "未设置昵称") + '</span>' +
               '<span class="settings-account-item-detail">' +
-                '游戏ID: ' + (acc.viewer_id || "--") +
-                ' · 服务器: ' + (acc.platform_name || "未知") +
+                'UID: ' + (acc.viewer_id || "--") +
+                ' · ' + (acc.platform_name || "未知") +
               '</span>' +
+              clanInfo +
             '</div>' +
             '<button class="btn btn-sm btn-danger btn-unbind-account" data-aid="' + acc.id + '" data-name="' + (acc.name || "该账号") + '">解绑</button>' +
           '</div>';
@@ -833,10 +838,11 @@
         var empty = $("#clan-modal-empty");
         if (!loading) return;
         loading.style.display = "none";
-        if (clans && clans.length > 0) {
+        var unboundClans = clans ? clans.filter(function (c) { return !c.already_bound; }) : [];
+        if (unboundClans.length > 0) {
           content.style.display = "block";
           var sel = $("#modal-clan-select");
-          clans.forEach(function (c) {
+          unboundClans.forEach(function (c) {
             var opt = document.createElement("option");
             opt.value = c.clan_id;
             opt.setAttribute("data-name", c.clan_name);
@@ -844,8 +850,8 @@
             sel.appendChild(opt);
           });
           // Pre-fill clan name
-          if (clans[0]) {
-            $("#modal-clan-name").value = clans[0].clan_name;
+          if (unboundClans[0]) {
+            $("#modal-clan-name").value = unboundClans[0].clan_name;
           }
           sel.addEventListener("change", function () {
             var idx = this.selectedIndex;

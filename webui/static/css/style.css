@@ -918,6 +918,7 @@ a:hover { text-decoration: underline; }
 }
 .settings-account-item-name { font-weight: 500; font-size: .9rem; }
 .settings-account-item-detail { font-size: .8rem; color: var(--text-muted); }
+.settings-account-item-clan { font-size: .8rem; color: var(--accent); }
 
 /* Monitor actions */
 .monitor-item-actions {

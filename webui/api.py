@@ -400,12 +400,21 @@ async def account_info(token: CookieCache = Depends(verify_cookie)):
     # 监控状态
     monitor_list = []
     for gid, info in clanbattle_info.items():
+        account_name = ""
+        if info.user_id:
+            try:
+                monitor_accounts = await pcr_sqla.query_account(info.user_id)
+                if monitor_accounts:
+                    account_name = monitor_accounts[0].name or str(monitor_accounts[0].viewer_id)
+            except Exception:
+                pass
         monitor_list.append({
             "group_id": gid,
             "active": bool(info.loop_check),
             "user_id": info.user_id,
             "rank": info.rank,
             "clan_name": info.clan_name,
+            "account_name": account_name,
         })
     result["monitors"] = monitor_list
     return result
@@ -440,16 +449,27 @@ async def list_accounts(token: CookieCache = Depends(verify_cookie)):
     user_id = int(token.user_id)
     accounts = await pcr_sqla.query_account(user_id)
     platform_map = {0: "B服", 1: "渠道服", 2: "台服"}
-    return [
-        {
+    result = []
+    for acc in accounts:
+        item = {
             "id": acc.id,
             "viewer_id": acc.viewer_id,
             "platform": acc.platform,
             "platform_name": platform_map.get(acc.platform, "未知"),
             "name": acc.name or "",
+            "clan_name": None,
+            "clan_id": None,
         }
-        for acc in accounts
-    ]
+        try:
+            client = await query(acc)
+            home = await client.home_index()
+            if home.user_clan and home.user_clan.clan_id:
+                item["clan_name"] = home.user_clan.clan_name
+                item["clan_id"] = home.user_clan.clan_id
+        except Exception:
+            pass
+        result.append(item)
+    return result
 
 
 @app.post("/bind_account")
@@ -572,19 +592,29 @@ async def my_clans(token: CookieCache = Depends(verify_cookie)):
     if not accounts:
         return []
     platform_map = {0: "B服", 1: "渠道服", 2: "台服"}
+    # Get already bound groups
+    bound_groups = set()
+    if groups := await pcr_sqla.get_member_group(user_id):
+        bound_groups = {g.group_id for g in groups}
     clans = []
+    seen_clan_ids = set()
     for acc in accounts:
         try:
             client = await query(acc)
             home = await client.home_index()
             if home.user_clan and home.user_clan.clan_id:
+                clan_id = home.user_clan.clan_id
+                if clan_id in seen_clan_ids:
+                    continue
+                seen_clan_ids.add(clan_id)
                 clans.append({
-                    "clan_id": home.user_clan.clan_id,
+                    "clan_id": clan_id,
                     "clan_name": home.user_clan.clan_name or "未知公会",
                     "member_count": home.user_clan.clan_member_count or 0,
                     "account_name": acc.name or str(acc.viewer_id),
                     "platform": acc.platform,
                     "platform_name": platform_map.get(acc.platform, "未知"),
+                    "already_bound": clan_id in bound_groups,
                 })
         except Exception as e:
             log.warning(f"查询账号 {acc.viewer_id} 公会信息失败: {e}")
