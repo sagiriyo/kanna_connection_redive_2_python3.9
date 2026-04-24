@@ -611,38 +611,119 @@
   function showBindAccountModal() {
     showModal("绑定游戏账号", '\
       <div class="modal-form-group">\
-        <label>游戏ID (Viewer ID)</label>\
-        <input type="number" id="modal-account-vid" placeholder="输入游戏ID" required>\
-      </div>\
-      <div class="modal-form-group">\
-        <label>服务器</label>\
-        <select id="modal-account-platform">\
-          <option value="2">B服</option>\
-          <option value="3">渠道服</option>\
-          <option value="4">台服</option>\
+        <label>服务器类型</label>\
+        <select id="modal-bind-platform">\
+          <option value="b">B服（Bilibili）</option>\
+          <option value="qu">渠道服</option>\
+          <option value="tw">台服</option>\
         </select>\
       </div>\
-      <div class="modal-form-group">\
-        <label>游戏昵称 (可选)</label>\
-        <input type="text" id="modal-account-name" placeholder="输入游戏昵称">\
+      <div id="bind-fields-b" class="bind-platform-fields">\
+        <div class="modal-form-group">\
+          <label>B站账号</label>\
+          <input type="text" id="modal-bili-account" placeholder="输入B站账号">\
+        </div>\
+        <div class="modal-form-group">\
+          <label>B站密码</label>\
+          <input type="password" id="modal-bili-password" placeholder="输入B站密码">\
+        </div>\
       </div>\
+      <div id="bind-fields-qu" class="bind-platform-fields" style="display:none">\
+        <div class="modal-form-group">\
+          <label>login_id</label>\
+          <input type="text" id="modal-qu-login-id" placeholder="输入login_id">\
+        </div>\
+        <div class="modal-form-group">\
+          <label>token</label>\
+          <input type="text" id="modal-qu-token" placeholder="输入token">\
+        </div>\
+        <div class="modal-form-group">\
+          <label>token2（可选，如果token被分成两段）</label>\
+          <input type="text" id="modal-qu-token2" placeholder="可选">\
+        </div>\
+      </div>\
+      <div id="bind-fields-tw" class="bind-platform-fields" style="display:none">\
+        <div class="modal-form-group">\
+          <label>short_udid</label>\
+          <input type="text" id="modal-tw-short-udid" placeholder="输入short_udid">\
+        </div>\
+        <div class="modal-form-group">\
+          <label>udid</label>\
+          <input type="text" id="modal-tw-udid" placeholder="输入udid">\
+        </div>\
+        <div class="modal-form-group">\
+          <label>viewer_id</label>\
+          <input type="number" id="modal-tw-viewer-id" placeholder="输入viewer_id">\
+        </div>\
+      </div>\
+      <p class="bind-hint">💡 绑定信息与QQ端「绑定账号」指令一致，绑定后将自动验证登录</p>\
     ', async function () {
-      var vid = parseInt($("#modal-account-vid").value);
-      var platform = parseInt($("#modal-account-platform").value);
-      var name = $("#modal-account-name").value.trim();
-      if (!vid) { toast("请输入游戏ID", "error"); return; }
+      var platform = $("#modal-bind-platform").value;
+      var payload = { platform: platform };
+      if (platform === "b") {
+        payload.bili_account = $("#modal-bili-account").value.trim();
+        payload.bili_password = $("#modal-bili-password").value;
+        if (!payload.bili_account || !payload.bili_password) {
+          toast("请输入B站账号和密码", "error"); return;
+        }
+      } else if (platform === "qu") {
+        payload.login_id = $("#modal-qu-login-id").value.trim();
+        payload.token = $("#modal-qu-token").value.trim();
+        payload.token2 = $("#modal-qu-token2").value.trim();
+        if (!payload.login_id || !payload.token) {
+          toast("请输入login_id和token", "error"); return;
+        }
+      } else if (platform === "tw") {
+        payload.short_udid = $("#modal-tw-short-udid").value.trim();
+        payload.udid = $("#modal-tw-udid").value.trim();
+        payload.viewer_id = parseInt($("#modal-tw-viewer-id").value);
+        if (!payload.short_udid || !payload.udid || !payload.viewer_id) {
+          toast("请输入short_udid、udid和viewer_id", "error"); return;
+        }
+      }
       try {
-        await api("/bind_account", {
+        var res = await api("/bind_account", {
           method: "POST",
-          body: JSON.stringify({ viewer_id: vid, platform: platform, name: name }),
+          body: JSON.stringify(payload),
         });
-        toast("绑定账号成功", "success");
         closeModal();
+        var info = [];
+        if (res && res.viewer_id) info.push("UID: " + res.viewer_id);
+        if (res && res.name) info.push("昵称: " + res.name);
+        var detail = info.length ? "\n" + info.join("  |  ") : "";
+        showModal("✅ 绑定成功", '\
+          <div style="text-align:center;padding:1rem 0">\
+            <div style="font-size:2.5rem;margin-bottom:.75rem">🎉</div>\
+            <p style="font-size:1rem;margin:0 0 .5rem">游戏账号绑定成功！</p>\
+            ' + (res && res.viewer_id ? '<p style="font-size:.9rem;color:var(--text-muted);margin:0">UID: <strong>' + res.viewer_id + '</strong></p>' : '') + '\
+            ' + (res && res.name ? '<p style="font-size:.9rem;color:var(--text-muted);margin:.25rem 0 0">昵称: <strong>' + res.name + '</strong></p>' : '') + '\
+          </div>\
+        ', function () { closeModal(); });
         loadAccountList();
       } catch (err) {
-        toast(err.message, "error");
+        closeModal();
+        showModal("❌ 绑定失败", '\
+          <div style="text-align:center;padding:1rem 0">\
+            <div style="font-size:2.5rem;margin-bottom:.75rem">😥</div>\
+            <p style="font-size:1rem;margin:0 0 .5rem">绑定失败</p>\
+            <p style="font-size:.85rem;color:var(--text-muted);margin:0;word-break:break-all">' + (err.message || "未知错误") + '</p>\
+          </div>\
+        ', function () { closeModal(); });
       }
     });
+
+    // Switch platform fields
+    setTimeout(function () {
+      var sel = $("#modal-bind-platform");
+      if (sel) {
+        sel.addEventListener("change", function () {
+          var val = this.value;
+          $$(".bind-platform-fields").forEach(function (el) { el.style.display = "none"; });
+          var target = $("#bind-fields-" + val);
+          if (target) target.style.display = "block";
+        });
+      }
+    }, 100);
   }
 
   async function cancelMonitor(groupId) {
