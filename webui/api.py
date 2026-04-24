@@ -430,6 +430,66 @@ async def unbind_clan(
     return "解绑公会成功"
 
 
+@app.get("/accounts")
+async def list_accounts(token: CookieCache = Depends(verify_cookie)):
+    user_id = int(token.user_id)
+    accounts = await pcr_sqla.query_account(user_id)
+    platform_map = {2: "B服", 3: "渠道服", 4: "台服"}
+    return [
+        {
+            "id": acc.id,
+            "viewer_id": acc.viewer_id,
+            "platform": acc.platform,
+            "platform_name": platform_map.get(acc.platform, "未知"),
+            "name": acc.name or "",
+        }
+        for acc in accounts
+    ]
+
+
+@app.post("/bind_account")
+async def bind_account(
+    form: BindAccountForm, token: CookieCache = Depends(verify_cookie)
+):
+    user_id = int(token.user_id)
+    await pcr_sqla.add_account(
+        user_id,
+        {
+            "user_id": user_id,
+            "viewer_id": form.viewer_id,
+            "platform": form.platform,
+            "name": form.name or None,
+        },
+    )
+    return "绑定账号成功"
+
+
+@app.post("/unbind_account")
+async def unbind_account(
+    form: UnbindAccountForm, token: CookieCache = Depends(verify_cookie)
+):
+    user_id = int(token.user_id)
+    await pcr_sqla.delete_account(form.account_id, user_id)
+    return "解绑账号成功"
+
+
+@app.post("/cancel_monitor")
+async def cancel_monitor(
+    form: CancelMonitorForm, token: CookieCache = Depends(verify_cookie)
+):
+    user_id = int(token.user_id)
+    group_id = form.group_id
+    if group_id not in clanbattle_info:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "该群未开启出刀监控")
+    clan_info = clanbattle_info[group_id]
+    if user_id != clan_info.user_id:
+        web_user = await pcr_sqla.web_query_user(user_id)
+        if not web_user or web_user.priority < 1:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "你不是监控人或管理员")
+    clan_info.loop_num += 1
+    return "已取消出刀监控"
+
+
 @on_startup
 async def kanna_web():
     web = threading.Thread(

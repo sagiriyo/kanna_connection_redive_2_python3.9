@@ -82,6 +82,16 @@ class SQALA:
                 else:
                     await session.execute(insert(Account).values(**account))
 
+    async def delete_account(self, account_id: int, user_id: int):
+        async with self.async_session() as session:
+            async with session.begin():
+                await session.execute(
+                    delete(Account).where(
+                        Account.id == account_id,
+                        Account.user_id == user_id,
+                    )
+                )
+
     async def change_access(self, user_id: int, level: int):
         async with self.async_session() as session:
             async with session.begin():

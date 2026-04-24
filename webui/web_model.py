@@ -105,3 +105,17 @@ class BindClanForm(BaseModel):
 
 class UnbindClanForm(BaseModel):
     group_id: int
+
+
+class BindAccountForm(BaseModel):
+    viewer_id: int
+    platform: int = 2
+    name: str = ""
+
+
+class UnbindAccountForm(BaseModel):
+    account_id: int
+
+
+class CancelMonitorForm(BaseModel):
+    group_id: int

@@ -883,6 +883,33 @@ a:hover { text-decoration: underline; }
   border-radius: 50%;
   background: currentColor;
 }
+/* Account list */
+.settings-account-list { margin-bottom: 1rem; }
+.settings-account-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .6rem .75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: .5rem;
+}
+.settings-account-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+}
+.settings-account-item-name { font-weight: 500; font-size: .9rem; }
+.settings-account-item-detail { font-size: .8rem; color: var(--text-muted); }
+
+/* Monitor actions */
+.monitor-item-actions {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
 .settings-hint {
   font-size: .8rem;
   color: var(--text-muted);
